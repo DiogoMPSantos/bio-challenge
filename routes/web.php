@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AmountController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,3 +17,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+
+Route::get('/table', [AmountController::class, 'table']);
+Route::get('/form', [AmountController::class, 'form']);
+Route::get('/download', [AmountController::class, 'download']);
+Route::get('/upload', [AmountController::class, 'upload']);
