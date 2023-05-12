@@ -12,6 +12,7 @@ use Facebook\WebDriver\WebDriverCheckboxes;
 use Facebook\WebDriver\WebDriverRadios;
 use Facebook\WebDriver\WebDriverSelect;
 use Illuminate\Support\Facades\Storage;
+use Smalot\PdfParser\Parser;
 
 class AmountController extends Controller
 {
@@ -164,5 +165,137 @@ class AmountController extends Controller
 
         return response()->json(['Retorno do Preenchimento' => $response, 'status' => $status]);
 
+    }
+
+    public function pdf()
+    {   
+
+        $pdfParser = new Parser();
+        $path = Storage::path('Leitura PDF.pdf');
+        $pdf = $pdfParser->parseFile($path);
+        $pages = $pdf->getPages();
+
+        foreach ($pages as $key => $page) {
+            
+            if ($key == 0) {
+
+                $content = $page->getText();
+                $content = preg_replace("/\r|\n/", "", $content);
+
+                preg_match_all('/ANS([0-9]*)/m', $content, $matches);
+                $ans = $matches[1][0];
+
+                preg_match_all('/Nome da Operadora([A-Z ]* [\w\/]*)/m', $content, $matches);
+                $nomeOp = $matches[1][0];
+
+                preg_match_all('/Código na Operadora([0-9]*)/m', $content, $matches);
+                $codigoOp = $matches[1][0];
+
+                preg_match_all('/Código na Operadora([0-9 ]*- [A-Z .-]*[0-9]*)/m', $content, $matches);
+                $nomeContratado = $matches[1][0];
+
+                preg_match_all('/Código CNES([0-9]{1})/m', $content, $matches);
+                $nLote = $matches[1][0];
+
+                preg_match_all('/Número do Lote([0-9]{7})/m', $content, $matches);
+                $nProtocolo = $matches[1][0];
+                
+                preg_match_all('/Nº do Protocolo \(Processo\)([0-9\/]*)/m', $content, $matches);
+                $dataProtocolo = $matches[1][0];
+
+                preg_match_all('/Código da Glosa do Protocolo()/m', $content, $matches);
+                $codGlosa = $matches[1][0];
+
+                preg_match_all('/Valor Informado do Protocolo (\([A-Z$\) .,0-9]{13})/m', $content, $matches);
+                $viProtocolo = $matches[1][0];
+                $vpProtocolo = $matches[1][0];
+                $vlProtocolo = $matches[1][0];
+
+                preg_match_all('/Valor Informado do Protocolo (\([A-Z$\) .,0-9]{13})([A-Z$\) .,0-9]{11})([0-9.,]*)/m', $content, $matches);
+                $vgProtocolo = $matches[3][0];
+                $vgGeral = $matches[3][0];
+
+                preg_match_all('/Valor Informado Geral (\([A-Z$\) .,0-9]{13})/m', $content, $matches);
+                $viGeral = $matches[1][0];
+                $vpGeral = $matches[1][0];
+                $vlGeral = $matches[1][0];
+
+                $header = array(
+                    "Registro ANS", "Nome da Operadora", "Código na Operadora", 
+                    "Nome do Contratado", "Número do Lote", "Número do Protocolo", "Data do Protocolo", "Código  da Glosa do Protocolo",
+                    "Valor Informado do Protocolo", "Valor Processado do Protocolo", "Valor Liberado do Protocolo", "Valor Glosa do Protocolo", 
+                    "Valor Informado Geral", "Valor Processado Geral", "Valor Liberado Geral","Valor Glosa Geral"
+
+                );
+
+                $first_row = array(
+                    $ans, $nomeOp, $codigoOp, $nomeContratado, $nLote, $nProtocolo, $dataProtocolo, $codGlosa,
+                    $viProtocolo, $vpProtocolo, $vlProtocolo, $vgProtocolo, $viGeral, $vpGeral, $vlGeral, $vgGeral
+                );
+
+                $file = fopen('php://output', 'wb');
+                fputcsv($file, $header);
+                fputcsv($file,["\n"]);
+                fputcsv($file, $first_row);
+                fputcsv($file,["\n"]);
+            }
+            else if ($key == 1) { //Pagina generica
+                continue;
+            }else{
+
+                $content = $page->getText();
+
+                preg_match_all('/Número da Guia no Prestador([0-9]*)/m', $content, $matches);
+                $ngPrestador = $matches[1][0] ?? "";
+
+                preg_match_all('/Número da Guia no Prestador([0-9 -]{18})/m', $content, $matches);
+                $ngOperadora = $matches[1][0] ?? "";
+
+                preg_match_all('/Senha()/m', $content, $matches);
+                $senha = $matches[1][0] ?? "";
+
+                preg_match_all('/Senha([A-Z0-9-  ]{40})/m', $content, $matches);
+                $nBeneficiario = $matches[1][0] ?? "";
+
+                preg_match_all('/Nome do Beneficiário([0-9 ]{27})/m', $content, $matches);
+                $nCarteira = $matches[1][0] ?? "";
+
+                preg_match_all('/Número da Carteira([0-9\/]*)/m', $content, $matches);
+                $dataInicioFaturamento = $matches[1][0] ?? "";
+
+                preg_match_all('/Data Início do Faturamento([0-9\/]*)/m', $content, $matches);
+                $dataFimFaturamento = $matches[1][0] ?? "";
+
+                preg_match_all('/Data Fim do Faturamento([0-9:]*)/m', $content, $matches);
+                $horaInicioFaturamento = $matches[1][0] ?? "";
+
+                preg_match_all('/Hora Início do Faturamento([0-9:]*)/m', $content, $matches);
+                $horaFimFaturamento = $matches[1][0] ?? "";
+
+                preg_match_all('/Código da Glosa da Guia()/m', $content, $matches);
+                $cgGuia = $matches[1][0] ?? "";
+
+                preg_match_all('/Código da Glosa da Guia()/m', $content, $matches);
+                $cgGuia = $matches[1][0] ?? "";
+
+                $row = array(
+                    $ngPrestador, $ngOperadora, $senha, $nBeneficiario, $nCarteira, $dataInicioFaturamento,
+                    $dataFimFaturamento, $horaInicioFaturamento, $horaFimFaturamento, $cgGuia
+                );
+
+                $file = fopen('php://output', 'wb');
+                fputcsv($file, $row);
+                fputcsv($file,["\n"]);
+
+            }
+
+        }
+
+        
+        // header('Content-Type: text/csv');
+        // header('Content-Disposition: attachment; filename="sample.csv"');
+        // fclose($file);
+
+        return response()->json(['salve']);
     }
 }

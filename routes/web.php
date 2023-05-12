@@ -23,3 +23,5 @@ Route::get('/table', [AmountController::class, 'table']);
 Route::get('/form', [AmountController::class, 'form']);
 Route::get('/download', [AmountController::class, 'download']);
 Route::get('/upload', [AmountController::class, 'upload']);
+
+Route::get('/pdf', [AmountController::class, 'pdf']);
